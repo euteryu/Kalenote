@@ -104,9 +104,9 @@ export const db = {
         status: dbUpdates.status,
         priority: dbUpdates.priority,
         tags: dbUpdates.tags,
-        timeDuration: dbUpdates.time_duration,
-        dueDate: dbUpdates.due_date,
-        completedAt: dbUpdates.completed_at,
+        time_duration: dbUpdates.time_duration,
+        due_date: dbUpdates.due_date,
+        completed_at: dbUpdates.completed_at,
       });
     } catch (error) {
       console.error('Failed to update task:', error);

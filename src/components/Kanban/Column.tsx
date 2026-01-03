@@ -9,10 +9,9 @@ interface ColumnProps {
   status: Status;
   tasks: Task[];
   icon: string;
-  color: string;
 }
 
-export const Column = memo(({ title, status, tasks, icon, color }: ColumnProps) => {
+export const Column = memo(({ title, status, tasks, icon }: ColumnProps) => {
   const { setNodeRef } = useDroppable({ id: status });
 
   return (

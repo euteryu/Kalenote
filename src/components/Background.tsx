@@ -5,9 +5,13 @@ import { getTheme } from '../themes';
 export const Background = () => {
   const { settings, isVoiceActive } = useStore();
   const theme = getTheme(settings.theme);
+  
+  // White background for modern/wild themes, light gray for classic themes
+  const whiteThemes = ['heatmap', 'blackeye', 'neon-city', 'candy-rush', 'miami-vice', 'acid-trip', 'saint'];
+  const bgColor = whiteThemes.includes(settings.theme) ? 'bg-white' : 'bg-gray-50';
 
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden bg-gray-50">
+    <div className={`fixed inset-0 -z-10 overflow-hidden ${bgColor}`}>
       {theme.orbs.map((orb, index) => (
         <motion.div
           key={index}

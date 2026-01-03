@@ -3,7 +3,7 @@ import { DndContext, DragEndEvent, DragOverlay, closestCorners } from '@dnd-kit/
 import { useStore } from '../../store';
 import { Column } from './Column';
 import { TaskCard } from './TaskCard';
-import { TimeTracker } from './TimeTracker';
+import { ConfirmModal } from '../ConfirmModal';
 import type { Status } from '../../types';
 
 export const KanbanBoard = () => {
@@ -12,25 +12,37 @@ export const KanbanBoard = () => {
   const [newTaskContent, setNewTaskContent] = useState('');
   const [newTaskTime, setNewTaskTime] = useState('');
   const [newTaskTags, setNewTaskTags] = useState('');
+  const [showTimeWarning, setShowTimeWarning] = useState(false);
+  const [pendingMove, setPendingMove] = useState<{ taskId: number; newStatus: Status; exceeded: number } | null>(null);
 
-  const columns: { status: Status; title: string; icon: string; color: string }[] = [
-    { status: 'inbox', title: 'Inbox', icon: '📥', color: '#90A4AE' },
-    { status: 'todo', title: 'To Do', icon: '📋', color: '#2196F3' },
-    { status: 'doing', title: 'Doing', icon: '🎯', color: '#4CAF50' },
-    { status: 'done', title: 'Done', icon: '✅', color: '#9E9E9E' },
+  const columns: { status: Status; title: string; icon: string }[] = [
+    { status: 'inbox', title: 'Inbox', icon: '📥' },
+    { status: 'todo', title: 'To Do', icon: '📋' },
+    { status: 'doing', title: 'Doing', icon: '🎯' },
+    { status: 'done', title: 'Done', icon: '✅' },
   ];
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    
+    // Clear activeId immediately to prevent visual glitches
     setActiveId(null);
 
-    if (!over) return;
+    if (!over) {
+      // Card dropped outside - do nothing, stays in original position
+      return;
+    }
 
     const taskId = active.id as number;
     const newStatus = over.id as Status;
     const task = tasks.find((t) => t.id === taskId);
 
     if (!task) return;
+
+    // No change if same status
+    if (task.status === newStatus) {
+      return;
+    }
 
     // Check time constraint for 'doing' status
     if (newStatus === 'doing' && task.time_duration) {
@@ -39,19 +51,18 @@ export const KanbanBoard = () => {
       const availableMinutes = settings.available_time * 60;
 
       if (totalTime + task.time_duration > availableMinutes) {
-        const confirmed = window.confirm(
-          `Adding this task will exceed your available time by ${Math.ceil((totalTime + task.time_duration - availableMinutes) / 60)} hours. Add anyway?`
-        );
-        if (!confirmed) return;
+        const exceededHours = Math.ceil((totalTime + task.time_duration - availableMinutes) / 60);
+        setPendingMove({ taskId, newStatus, exceeded: exceededHours });
+        setShowTimeWarning(true);
+        return;
       }
     }
 
-    if (task.status !== newStatus) {
-      updateTask(taskId, {
-        status: newStatus,
-        completed_at: newStatus === 'done' ? new Date().toISOString() : undefined,
-      });
-    }
+    // Move task
+    updateTask(taskId, {
+      status: newStatus,
+      completed_at: newStatus === 'done' ? new Date().toISOString() : undefined,
+    });
   };
 
   const handleAddTask = (e: React.FormEvent) => {
@@ -78,7 +89,7 @@ export const KanbanBoard = () => {
   };
 
   return (
-    <div className="flex flex-col h-full p-6 gap-6">
+    <div className="flex flex-col h-full p-6 gap-4">
       {/* Add task form */}
       <form onSubmit={handleAddTask} className="bg-white/30 backdrop-blur-md rounded-2xl p-4 border border-white/30">
         <div className="flex gap-3">
@@ -118,11 +129,12 @@ export const KanbanBoard = () => {
         </div>
       </form>
 
-      {/* Time tracker */}
-      <TimeTracker />
-
       {/* Kanban columns */}
-      <DndContext onDragEnd={handleDragEnd} onDragStart={(e) => setActiveId(e.active.id as number)} collisionDetection={closestCorners}>
+      <DndContext 
+        onDragEnd={handleDragEnd} 
+        onDragStart={(e) => setActiveId(e.active.id as number)} 
+        collisionDetection={closestCorners}
+      >
         <div className="grid grid-cols-4 gap-6 flex-1 overflow-hidden">
           {columns.map((col) => (
             <Column
@@ -133,12 +145,42 @@ export const KanbanBoard = () => {
           ))}
         </div>
 
-        <DragOverlay>
+        <DragOverlay 
+          dropAnimation={{
+            duration: 200,
+            easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+          }}
+        >
           {activeId ? (
-            <TaskCard task={tasks.find((t) => t.id === activeId)!} />
+            <div className="transform rotate-3 scale-105 opacity-90">
+              <TaskCard task={tasks.find((t) => t.id === activeId)!} />
+            </div>
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Time limit warning modal */}
+      <ConfirmModal
+        isOpen={showTimeWarning}
+        title="Time Limit Exceeded"
+        message={`Adding this task will exceed your available time by ${pendingMove?.exceeded || 0} hours. Add anyway?`}
+        onConfirm={() => {
+          if (pendingMove) {
+            updateTask(pendingMove.taskId, {
+              status: pendingMove.newStatus,
+              completed_at: pendingMove.newStatus === 'done' ? new Date().toISOString() : undefined,
+            });
+          }
+          setPendingMove(null);
+        }}
+        onCancel={() => {
+          setPendingMove(null);
+          setShowTimeWarning(false);
+        }}
+        confirmText="Add Anyway"
+        cancelText="Cancel"
+        confirmColor="bg-yellow-500 hover:bg-yellow-600"
+      />
     </div>
   );
 };

@@ -9,7 +9,7 @@ export const VoiceOverlay = () => {
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const silenceTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Initialize Web Speech API

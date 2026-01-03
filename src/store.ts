@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Task, Tag, CalendarPreset, AppSettings, ViewMode, Theme } from './types';
+import type { Task, CalendarPreset, AppSettings, ViewMode } from './types';
 import { db } from './api';
 
 interface AppState {

@@ -10,7 +10,7 @@ export const TimerView = () => {
   const [countdownTarget, setCountdownTarget] = useState(25 * 60); // Default 25 min
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: number;
 
     if (isRunning) {
       interval = setInterval(() => {

@@ -15,7 +15,13 @@ export const SortableTaskCard = ({ task }: SortableTaskCardProps) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({ 
+    id: task.id,
+    // Only activate drag on pointer move, not click
+    activationConstraint: {
+      distance: 8, // Must move 8px before dragging starts
+    },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
