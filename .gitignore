@@ -1,0 +1,5 @@
+node_modules/
+show_proj_structure.py
+clean_project_structure.txt
+package-lock.json
+src-tauri/target/
