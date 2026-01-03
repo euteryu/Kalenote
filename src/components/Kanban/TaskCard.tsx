@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { useStore } from '../../store';
 import type { Task, Priority } from '../../types';
@@ -7,7 +7,7 @@ interface TaskCardProps {
   task: Task;
 }
 
-export const TaskCard = ({ task }: TaskCardProps) => {
+export const TaskCard = memo(({ task }: TaskCardProps) => {
   const { updateTask, deleteTask, getOrCreateTag } = useStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(task.content);
@@ -105,9 +105,21 @@ export const TaskCard = ({ task }: TaskCardProps) => {
       ) : (
         <div
           onDoubleClick={handleDoubleClick}
-          className="text-gray-800 whitespace-pre-wrap cursor-text leading-relaxed"
+          className="text-gray-800 cursor-text leading-relaxed"
         >
-          {task.content}
+          {task.content.split('\n').map((line, idx) => {
+            const trimmed = line.trim();
+            // Check if line starts with bullet point
+            const isBullet = trimmed.startsWith('-') || trimmed.startsWith('•');
+            const bulletContent = isBullet ? trimmed.substring(1).trim() : trimmed;
+
+            return (
+              <div key={idx} className={isBullet ? 'flex items-start gap-2 ml-2' : ''}>
+                {isBullet && <span className="text-blue-500 mt-1">•</span>}
+                <span className={isBullet ? 'flex-1' : ''}>{bulletContent || '\u00A0'}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -148,4 +160,16 @@ export const TaskCard = ({ task }: TaskCardProps) => {
       </button>
     </motion.div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for memo
+  return (
+    prevProps.task.id === nextProps.task.id &&
+    prevProps.task.content === nextProps.task.content &&
+    prevProps.task.status === nextProps.task.status &&
+    prevProps.task.priority === nextProps.task.priority &&
+    prevProps.task.tags.length === nextProps.task.tags.length &&
+    prevProps.task.time_duration === nextProps.task.time_duration
+  );
+});
+
+TaskCard.displayName = 'TaskCard';

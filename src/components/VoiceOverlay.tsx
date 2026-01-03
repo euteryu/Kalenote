@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store';
+import { useToast } from '../hooks/useToast';
 
 export const VoiceOverlay = () => {
   const { isVoiceActive, setVoiceActive, addTask } = useStore();
+  const { addToast } = useToast();
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -53,6 +55,7 @@ export const VoiceOverlay = () => {
 
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
+      addToast('Voice recognition error', 'error');
       setIsListening(false);
     };
 
@@ -70,7 +73,7 @@ export const VoiceOverlay = () => {
         clearTimeout(silenceTimerRef.current);
       }
     };
-  }, []);
+  }, [addToast]);
 
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
@@ -100,6 +103,7 @@ export const VoiceOverlay = () => {
       priority: 0,
       tags: [],
     });
+    addToast('Voice note added to Inbox ✓', 'success');
     setTranscript('');
     setVoiceActive(false);
   };

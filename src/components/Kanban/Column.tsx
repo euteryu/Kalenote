@@ -1,6 +1,6 @@
+import { memo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { TaskCard } from './TaskCard';
 import { SortableTaskCard } from './SortableTaskCard';
 import type { Task, Status } from '../../types';
 
@@ -12,7 +12,7 @@ interface ColumnProps {
   color: string;
 }
 
-export const Column = ({ title, status, tasks, icon, color }: ColumnProps) => {
+export const Column = memo(({ title, status, tasks, icon, color }: ColumnProps) => {
   const { setNodeRef } = useDroppable({ id: status });
 
   return (
@@ -50,4 +50,6 @@ export const Column = ({ title, status, tasks, icon, color }: ColumnProps) => {
       </div>
     </div>
   );
-};
+});
+
+Column.displayName = 'Column';

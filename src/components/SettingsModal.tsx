@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store';
+import { useToast } from '../hooks/useToast';
 import { themes } from '../themes';
 
 interface SettingsModalProps {
@@ -10,6 +11,7 @@ interface SettingsModalProps {
 
 export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const { settings, updateSettings, calendarPresets, addCalendarPreset, deleteCalendarPreset } = useStore();
+  const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'general' | 'presets'>('general');
   
   // Preset form state
@@ -18,7 +20,10 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const [newPresetPriority, setNewPresetPriority] = useState<0 | 1 | 2>(0);
 
   const handleAddPreset = () => {
-    if (!newPresetName.trim()) return;
+    if (!newPresetName.trim()) {
+      addToast('Please enter a preset name', 'warning');
+      return;
+    }
     
     const tags = newPresetTags.split(',').map(t => t.trim()).filter(Boolean);
     
@@ -28,9 +33,21 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
       default_priority: newPresetPriority,
     });
 
+    addToast(`Preset "${newPresetName}" created ✓`, 'success');
+    
     setNewPresetName('');
     setNewPresetTags('');
     setNewPresetPriority(0);
+  };
+
+  const handleDeletePreset = (preset: typeof calendarPresets[0]) => {
+    deleteCalendarPreset(preset.id);
+    addToast(`Preset "${preset.name}" deleted`, 'info');
+  };
+
+  const handleUpdateSettings = (updates: Partial<typeof settings>) => {
+    updateSettings(updates);
+    addToast('Settings saved ✓', 'success');
   };
 
   return (
@@ -94,7 +111,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   </label>
                   <select
                     value={settings.theme}
-                    onChange={(e) => updateSettings({ theme: e.target.value })}
+                    onChange={(e) => handleUpdateSettings({ theme: e.target.value })}
                     className="w-full bg-white/50 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
                     {themes.map((theme) => (
@@ -112,7 +129,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   </label>
                   <select
                     value={settings.time_mode}
-                    onChange={(e) => updateSettings({ time_mode: e.target.value as 'daily' | 'weekly' })}
+                    onChange={(e) => handleUpdateSettings({ time_mode: e.target.value as 'daily' | 'weekly' })}
                     className="w-full bg-white/50 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
                     <option value="daily">Daily</option>
@@ -131,7 +148,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                       min="1"
                       max="168"
                       value={settings.available_time}
-                      onChange={(e) => updateSettings({ available_time: parseInt(e.target.value) || 12 })}
+                      onChange={(e) => handleUpdateSettings({ available_time: parseInt(e.target.value) || 12 })}
                       className="flex-1 bg-white/50 rounded-xl px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                     <span className="text-gray-600">hours</span>
@@ -215,7 +232,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                           </div>
                         </div>
                         <button
-                          onClick={() => deleteCalendarPreset(preset.id)}
+                          onClick={() => handleDeletePreset(preset)}
                           className="w-8 h-8 bg-red-500/20 hover:bg-red-500/30 rounded-full transition-colors flex items-center justify-center text-red-600"
                         >
                           ×

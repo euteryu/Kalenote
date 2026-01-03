@@ -25,6 +25,28 @@ pub struct NewTask {
     pub due_date: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Settings {
+    pub theme: String,
+    pub time_mode: String,
+    pub available_time: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CalendarPreset {
+    pub id: i64,
+    pub name: String,
+    pub default_tags: String, // JSON array as string
+    pub default_priority: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NewCalendarPreset {
+    pub name: String,
+    pub default_tags: String,
+    pub default_priority: i32,
+}
+
 pub struct Database {
     conn: Mutex<Connection>,
 }
@@ -33,6 +55,7 @@ impl Database {
     pub fn new(path: &str) -> Result<Self> {
         let conn = Connection::open(path)?;
         
+        // Tasks table
         conn.execute(
             "CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,11 +81,41 @@ impl Database {
             [],
         )?;
 
+        // Settings table (single row)
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS settings (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                theme TEXT NOT NULL DEFAULT 'cool-blues',
+                time_mode TEXT NOT NULL DEFAULT 'daily',
+                available_time INTEGER NOT NULL DEFAULT 12
+            )",
+            [],
+        )?;
+
+        // Initialize default settings if not exists
+        conn.execute(
+            "INSERT OR IGNORE INTO settings (id, theme, time_mode, available_time) 
+             VALUES (1, 'cool-blues', 'daily', 12)",
+            [],
+        )?;
+
+        // Calendar presets table
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS calendar_presets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                default_tags TEXT NOT NULL DEFAULT '[]',
+                default_priority INTEGER NOT NULL DEFAULT 0
+            )",
+            [],
+        )?;
+
         Ok(Database {
             conn: Mutex::new(conn),
         })
     }
 
+    // Task methods
     pub fn get_all_tasks(&self) -> Result<Vec<Task>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
@@ -173,6 +226,66 @@ impl Database {
     pub fn clear_column(&self, status: String) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute("DELETE FROM tasks WHERE status = ?", params![status])?;
+        Ok(())
+    }
+
+    // Settings methods
+    pub fn get_settings(&self) -> Result<Settings> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT theme, time_mode, available_time FROM settings WHERE id = 1")?;
+        
+        let settings = stmt.query_row([], |row| {
+            Ok(Settings {
+                theme: row.get(0)?,
+                time_mode: row.get(1)?,
+                available_time: row.get(2)?,
+            })
+        })?;
+
+        Ok(settings)
+    }
+
+    pub fn update_settings(&self, settings: Settings) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE settings SET theme = ?1, time_mode = ?2, available_time = ?3 WHERE id = 1",
+            params![settings.theme, settings.time_mode, settings.available_time],
+        )?;
+        Ok(())
+    }
+
+    // Calendar preset methods
+    pub fn get_all_presets(&self) -> Result<Vec<CalendarPreset>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, name, default_tags, default_priority FROM calendar_presets ORDER BY name"
+        )?;
+
+        let presets = stmt.query_map([], |row| {
+            Ok(CalendarPreset {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                default_tags: row.get(2)?,
+                default_priority: row.get(3)?,
+            })
+        })?
+        .collect::<Result<Vec<_>>>()?;
+
+        Ok(presets)
+    }
+
+    pub fn add_preset(&self, preset: NewCalendarPreset) -> Result<i64> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO calendar_presets (name, default_tags, default_priority) VALUES (?1, ?2, ?3)",
+            params![preset.name, preset.default_tags, preset.default_priority],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    pub fn delete_preset(&self, id: i64) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM calendar_presets WHERE id = ?", params![id])?;
         Ok(())
     }
 }

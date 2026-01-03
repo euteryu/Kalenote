@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/tauri';
-import type { Task, Priority, Status } from './types';
+import type { Task, Priority, Status, CalendarPreset, AppSettings } from './types';
 
 export interface DbTask {
   id: number;
@@ -22,6 +22,25 @@ export interface NewTaskDto {
   due_date?: string;
 }
 
+export interface DbSettings {
+  theme: string;
+  time_mode: string;
+  available_time: number;
+}
+
+export interface DbCalendarPreset {
+  id: number;
+  name: string;
+  default_tags: string; // JSON string
+  default_priority: Priority;
+}
+
+export interface NewPresetDto {
+  name: string;
+  default_tags: string; // JSON string
+  default_priority: Priority;
+}
+
 // Convert DB task to app Task
 function dbTaskToTask(dbTask: DbTask): Task {
   return {
@@ -39,7 +58,16 @@ function taskToDbTask(task: Partial<Task>): Partial<DbTask> {
   };
 }
 
+// Convert DB preset to app preset
+function dbPresetToPreset(dbPreset: DbCalendarPreset): CalendarPreset {
+  return {
+    ...dbPreset,
+    default_tags: JSON.parse(dbPreset.default_tags || '[]'),
+  };
+}
+
 export const db = {
+  // Tasks
   async getAllTasks(): Promise<Task[]> {
     try {
       const tasks = await invoke<DbTask[]>('get_all_tasks');
@@ -100,6 +128,64 @@ export const db = {
       await invoke('clear_column', { status });
     } catch (error) {
       console.error('Failed to clear column:', error);
+      throw error;
+    }
+  },
+
+  // Settings
+  async getSettings(): Promise<AppSettings> {
+    try {
+      const settings = await invoke<DbSettings>('get_settings');
+      return {
+        theme: settings.theme,
+        time_mode: settings.time_mode as 'daily' | 'weekly',
+        available_time: settings.available_time,
+      };
+    } catch (error) {
+      console.error('Failed to get settings:', error);
+      return { theme: 'cool-blues', time_mode: 'daily', available_time: 12 };
+    }
+  },
+
+  async updateSettings(settings: AppSettings): Promise<void> {
+    try {
+      await invoke('update_settings', { settings });
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      throw error;
+    }
+  },
+
+  // Calendar Presets
+  async getAllPresets(): Promise<CalendarPreset[]> {
+    try {
+      const presets = await invoke<DbCalendarPreset[]>('get_all_presets');
+      return presets.map(dbPresetToPreset);
+    } catch (error) {
+      console.error('Failed to get presets:', error);
+      return [];
+    }
+  },
+
+  async addPreset(preset: Omit<CalendarPreset, 'id'>): Promise<number> {
+    try {
+      const newPreset: NewPresetDto = {
+        name: preset.name,
+        default_tags: JSON.stringify(preset.default_tags),
+        default_priority: preset.default_priority,
+      };
+      return await invoke<number>('add_preset', { preset: newPreset });
+    } catch (error) {
+      console.error('Failed to add preset:', error);
+      throw error;
+    }
+  },
+
+  async deletePreset(id: number): Promise<void> {
+    try {
+      await invoke('delete_preset', { id });
+    } catch (error) {
+      console.error('Failed to delete preset:', error);
       throw error;
     }
   },

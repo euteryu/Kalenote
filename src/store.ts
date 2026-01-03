@@ -14,7 +14,7 @@ interface AppState {
   // Tasks
   tasks: Task[];
   isLoading: boolean;
-  initTasks: () => Promise<void>;
+  initData: () => Promise<void>;
   setTasks: (tasks: Task[]) => void;
   addTask: (task: Omit<Task, 'id' | 'created_at'>) => Promise<void>;
   updateTask: (id: number, updates: Partial<Task>) => Promise<void>;
@@ -27,12 +27,12 @@ interface AppState {
 
   // Calendar presets
   calendarPresets: CalendarPreset[];
-  addCalendarPreset: (preset: Omit<CalendarPreset, 'id'>) => void;
-  deleteCalendarPreset: (id: number) => void;
+  addCalendarPreset: (preset: Omit<CalendarPreset, 'id'>) => Promise<void>;
+  deleteCalendarPreset: (id: number) => Promise<void>;
 
   // Settings
   settings: AppSettings;
-  updateSettings: (settings: Partial<AppSettings>) => void;
+  updateSettings: (settings: Partial<AppSettings>) => Promise<void>;
 
   // Search
   searchQuery: string;
@@ -79,14 +79,23 @@ export const useStore = create<AppState>((set, get) => ({
   setCurrentView: (view) => set({ currentView: view }),
   setVoiceActive: (active) => set({ isVoiceActive: active }),
 
-  initTasks: async () => {
+  initData: async () => {
     set({ isLoading: true });
     try {
-      const tasks = await db.getAllTasks();
-      set({ tasks, isLoading: false });
+      const [tasks, settings, presets] = await Promise.all([
+        db.getAllTasks(),
+        db.getSettings(),
+        db.getAllPresets(),
+      ]);
+      
+      set({ 
+        tasks, 
+        settings,
+        calendarPresets: presets,
+        isLoading: false 
+      });
     } catch (error) {
-      console.error('Failed to load tasks:', error);
-      // Don't fail - just start with empty tasks
+      console.error('Failed to load data:', error);
       set({ tasks: [], isLoading: false });
     }
   },
@@ -109,7 +118,6 @@ export const useStore = create<AppState>((set, get) => ({
       set((state) => ({ tasks: [...state.tasks, newTask] }));
     } catch (error) {
       console.error('Failed to add task:', error);
-      // Fallback to local-only ID
       const newTask: Task = {
         ...taskData,
         id: Date.now(),
@@ -127,7 +135,6 @@ export const useStore = create<AppState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Failed to update task:', error);
-      // Still update locally
       set((state) => ({
         tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
       }));
@@ -142,7 +149,6 @@ export const useStore = create<AppState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Failed to delete task:', error);
-      // Still delete locally
       set((state) => ({
         tasks: state.tasks.filter((t) => t.id !== id),
       }));
@@ -157,7 +163,6 @@ export const useStore = create<AppState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Failed to clear column:', error);
-      // Still clear locally
       set((state) => ({
         tasks: state.tasks.filter((t) => t.status !== status),
       }));
@@ -176,26 +181,42 @@ export const useStore = create<AppState>((set, get) => ({
     return color;
   },
 
-  addCalendarPreset: (presetData) => {
-    const newPreset: CalendarPreset = {
-      ...presetData,
-      id: Date.now(),
-    };
-    set((state) => ({
-      calendarPresets: [...state.calendarPresets, newPreset],
-    }));
+  addCalendarPreset: async (presetData) => {
+    try {
+      const id = await db.addPreset(presetData);
+      const newPreset: CalendarPreset = {
+        ...presetData,
+        id,
+      };
+      set((state) => ({
+        calendarPresets: [...state.calendarPresets, newPreset],
+      }));
+    } catch (error) {
+      console.error('Failed to add preset:', error);
+    }
   },
 
-  deleteCalendarPreset: (id) => {
-    set((state) => ({
-      calendarPresets: state.calendarPresets.filter((p) => p.id !== id),
-    }));
+  deleteCalendarPreset: async (id) => {
+    try {
+      await db.deletePreset(id);
+      set((state) => ({
+        calendarPresets: state.calendarPresets.filter((p) => p.id !== id),
+      }));
+    } catch (error) {
+      console.error('Failed to delete preset:', error);
+    }
   },
 
-  updateSettings: (newSettings) => {
-    set((state) => ({
-      settings: { ...state.settings, ...newSettings },
-    }));
+  updateSettings: async (newSettings) => {
+    const updatedSettings = { ...get().settings, ...newSettings };
+    try {
+      await db.updateSettings(updatedSettings);
+      set({ settings: updatedSettings });
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      // Still update locally
+      set({ settings: updatedSettings });
+    }
   },
 
   setSearchQuery: (query) => set({ searchQuery: query }),

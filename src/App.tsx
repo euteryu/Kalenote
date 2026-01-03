@@ -3,21 +3,23 @@ import { useStore } from './store';
 import { Background } from './components/Background';
 import { VoiceOverlay } from './components/VoiceOverlay';
 import { SettingsModal } from './components/SettingsModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { ToastContainer } from './components/ToastContainer';
 import { KanbanBoard } from './components/Kanban/KanbanBoard';
 import { CalendarView } from './components/Calendar/CalendarView';
 import { TimerView } from './components/Timer/TimerView';
 
 function App() {
-  const { currentView, setCurrentView, initTasks, isLoading } = useStore();
+  const { currentView, setCurrentView, initData, isLoading } = useStore();
   const [error, setError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
-    initTasks().catch((err) => {
-      console.error('Failed to initialize tasks:', err);
-      setError(err.message || 'Failed to load tasks');
+    initData().catch((err) => {
+      console.error('Failed to initialize app:', err);
+      setError(err.message || 'Failed to load data');
     });
-  }, [initTasks]);
+  }, [initData]);
 
   if (error) {
     return (
@@ -87,18 +89,27 @@ function App() {
         </div>
       </header>
 
-      {/* Main content */}
+      {/* Main content - wrapped in ErrorBoundary */}
       <main className="relative z-10 h-[calc(100vh-73px)]">
-        {currentView === 'kanban' && <KanbanBoard />}
-        {currentView === 'calendar' && <CalendarView />}
-        {currentView === 'timer' && <TimerView />}
+        <ErrorBoundary>
+          {currentView === 'kanban' && <KanbanBoard />}
+          {currentView === 'calendar' && <CalendarView />}
+          {currentView === 'timer' && <TimerView />}
+        </ErrorBoundary>
       </main>
 
-      {/* Voice overlay */}
-      <VoiceOverlay />
+      {/* Voice overlay - wrapped in ErrorBoundary */}
+      <ErrorBoundary>
+        <VoiceOverlay />
+      </ErrorBoundary>
 
-      {/* Settings modal */}
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      {/* Settings modal - wrapped in ErrorBoundary */}
+      <ErrorBoundary>
+        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      </ErrorBoundary>
+
+      {/* Toast notifications */}
+      <ToastContainer />
     </div>
   );
 }
