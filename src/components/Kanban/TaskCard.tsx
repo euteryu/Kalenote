@@ -1,8 +1,8 @@
 import { useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { useStore } from '../../store';
-import { getThemeHoverColor } from '../../utils/themeColors';
-import { ConfirmModal } from '../ConfirmModal';
+import { getThemeHoverColor } from '../../utils/themecolors';
+import { ConfirmModal } from '../confirmmodal';
 import type { Task, Priority } from '../../types';
 
 interface TaskCardProps {

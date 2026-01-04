@@ -13,17 +13,21 @@ import {
 import { useStore } from '../../store';
 import { Column } from './Column';
 import { TaskCard } from './TaskCard';
-import { ConfirmModal } from '../ConfirmModal';
+import { ConfirmModal } from '../confirmmodal';
 import type { Status } from '../../types';
 
 export const KanbanBoard = () => {
-  const { tasks, updateTask, addTask, settings } = useStore();
+  const { tasks, updateTask, addTask, deleteTask, settings } = useStore();
   const [activeId, setActiveId] = useState<number | null>(null);
   const [newTaskContent, setNewTaskContent] = useState('');
   const [newTaskTime, setNewTaskTime] = useState('');
   const [newTaskTags, setNewTaskTags] = useState('');
   const [showTimeWarning, setShowTimeWarning] = useState(false);
   const [pendingMove, setPendingMove] = useState<{ taskId: number; newStatus: Status; exceeded: number } | null>(null);
+  
+  // Clear column confirmation
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [columnToClear, setColumnToClear] = useState<{ status: Status; title: string } | null>(null);
 
   // Configure sensors for better drag control
   const sensors = useSensors(
@@ -45,19 +49,14 @@ export const KanbanBoard = () => {
     setActiveId(event.active.id as number);
   };
 
-  const handleDragCancel = (event: DragCancelEvent) => {
-    // Drag was cancelled - just clear activeId
-    // Card stays in original position
+  const handleDragCancel = () => {
     setActiveId(null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
-    // Always clear activeId first
     setActiveId(null);
 
-    // If no valid drop target, card stays in original position
     if (!over) {
       return;
     }
@@ -69,33 +68,26 @@ export const KanbanBoard = () => {
       return;
     }
 
-    // Determine the target column
-    // over.id can be either a column status or another task id
     let newStatus: Status | null = null;
 
-    // Check if dropped on a column
     const columnStatuses: Status[] = ['inbox', 'todo', 'doing', 'done'];
     if (columnStatuses.includes(over.id as Status)) {
       newStatus = over.id as Status;
     } else {
-      // Dropped on another task - find that task's column
       const overTask = tasks.find((t) => t.id === over.id);
       if (overTask) {
         newStatus = overTask.status;
       }
     }
 
-    // If we couldn't determine target column, abort
     if (!newStatus) {
       return;
     }
 
-    // No change if same status
     if (task.status === newStatus) {
       return;
     }
 
-    // Check time constraint for 'doing' status
     if (newStatus === 'doing' && task.time_duration) {
       const doingTasks = tasks.filter((t) => t.status === 'doing' && t.id !== taskId);
       const totalTime = doingTasks.reduce((sum, t) => sum + (t.time_duration || 0), 0);
@@ -109,7 +101,6 @@ export const KanbanBoard = () => {
       }
     }
 
-    // Move task
     updateTask(taskId, {
       status: newStatus,
       completed_at: newStatus === 'done' ? new Date().toISOString() : undefined,
@@ -137,6 +128,23 @@ export const KanbanBoard = () => {
     setNewTaskContent('');
     setNewTaskTime('');
     setNewTaskTags('');
+  };
+
+  const handleClearColumnClick = (status: Status, title: string) => {
+    setColumnToClear({ status, title });
+    setShowClearConfirm(true);
+  };
+
+  const handleConfirmClear = () => {
+    if (!columnToClear) return;
+
+    const tasksToDelete = tasks.filter((t) => t.status === columnToClear.status);
+    tasksToDelete.forEach((task) => {
+      deleteTask(task.id);
+    });
+
+    setColumnToClear(null);
+    setShowClearConfirm(false);
   };
 
   return (
@@ -194,6 +202,7 @@ export const KanbanBoard = () => {
               key={col.status}
               {...col}
               tasks={tasks.filter((t) => t.status === col.status)}
+              onClearColumn={() => handleClearColumnClick(col.status, col.title)}
             />
           ))}
         </div>
@@ -233,6 +242,21 @@ export const KanbanBoard = () => {
         confirmText="Add Anyway"
         cancelText="Cancel"
         confirmColor="bg-yellow-500 hover:bg-yellow-600"
+      />
+
+      {/* Clear column confirmation modal */}
+      <ConfirmModal
+        isOpen={showClearConfirm}
+        title={`Clear ${columnToClear?.title}?`}
+        message={`Are you sure you want to delete all ${tasks.filter((t) => t.status === columnToClear?.status).length} task(s) in ${columnToClear?.title}? This action cannot be undone.`}
+        onConfirm={handleConfirmClear}
+        onCancel={() => {
+          setColumnToClear(null);
+          setShowClearConfirm(false);
+        }}
+        confirmText="Clear All"
+        cancelText="Cancel"
+        confirmColor="bg-red-500 hover:bg-red-600"
       />
     </div>
   );

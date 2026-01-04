@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent unwanted scrolling */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+}
+
 /* Custom scrollbar styling for glassmorphic theme */
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {

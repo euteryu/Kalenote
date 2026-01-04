@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ConfirmModal } from '../ConfirmModal';
+import { ConfirmModal } from '../confirmmodal';
 
 export const CalendarView = () => {
   const { tasks, addTask, updateTask, deleteTask, calendarPresets } = useStore();

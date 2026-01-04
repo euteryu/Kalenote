@@ -9,9 +9,10 @@ interface ColumnProps {
   status: Status;
   tasks: Task[];
   icon: string;
+  onClearColumn: () => void;
 }
 
-export const Column = memo(({ title, status, tasks, icon }: ColumnProps) => {
+export const Column = memo(({ title, status, tasks, icon, onClearColumn }: ColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   // Sort tasks by priority: High (2) -> Medium (1) -> Normal (0)
@@ -28,6 +29,15 @@ export const Column = memo(({ title, status, tasks, icon }: ColumnProps) => {
         <span className="ml-auto text-sm text-gray-500 bg-white/50 px-2 py-1 rounded-full">
           {tasks.length}
         </span>
+        {tasks.length > 0 && (
+          <button
+            onClick={onClearColumn}
+            className="text-xs px-3 py-1 bg-white/30 hover:bg-white/50 backdrop-blur-sm text-gray-700 border border-white/40 rounded-full transition-all"
+            title={`Clear all tasks in ${title}`}
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       {/* Drop zone - MUST be scrollable */}

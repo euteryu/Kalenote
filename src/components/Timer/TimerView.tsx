@@ -162,7 +162,7 @@ export const TimerView = () => {
     }
   };
 
-  const handleInputFocus = (type: 'hours' | 'minutes' | 'seconds') => {
+  const handleInputFocus = () => {
     // Select all on focus for easy replacement
     const input = document.activeElement as HTMLInputElement;
     if (input) {
@@ -241,7 +241,7 @@ export const TimerView = () => {
                     value={inputHours}
                     onChange={(e) => handleInputChange('hours', e.target.value)}
                     onBlur={(e) => handleInputBlur('hours', e.target.value)}
-                    onFocus={() => handleInputFocus('hours')}
+                    onFocus={handleInputFocus}
                     className="w-24 h-24 text-5xl text-center bg-white/40 backdrop-blur-md border-2 border-white/50 rounded-2xl focus:outline-none focus:border-blue-400 transition-all shadow-lg"
                     maxLength={2}
                     placeholder="00"
@@ -259,7 +259,7 @@ export const TimerView = () => {
                     value={inputMinutes}
                     onChange={(e) => handleInputChange('minutes', e.target.value)}
                     onBlur={(e) => handleInputBlur('minutes', e.target.value)}
-                    onFocus={() => handleInputFocus('minutes')}
+                    onFocus={handleInputFocus}
                     className="w-24 h-24 text-5xl text-center bg-white/40 backdrop-blur-md border-2 border-white/50 rounded-2xl focus:outline-none focus:border-blue-400 transition-all shadow-lg"
                     maxLength={2}
                     placeholder="00"
@@ -277,7 +277,7 @@ export const TimerView = () => {
                     value={inputSeconds}
                     onChange={(e) => handleInputChange('seconds', e.target.value)}
                     onBlur={(e) => handleInputBlur('seconds', e.target.value)}
-                    onFocus={() => handleInputFocus('seconds')}
+                    onFocus={handleInputFocus}
                     className="w-24 h-24 text-5xl text-center bg-white/40 backdrop-blur-md border-2 border-white/50 rounded-2xl focus:outline-none focus:border-blue-400 transition-all shadow-lg"
                     maxLength={2}
                     placeholder="00"
