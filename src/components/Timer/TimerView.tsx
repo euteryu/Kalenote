@@ -11,13 +11,13 @@ export const TimerView = () => {
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
   
-  // Input state
+  // Input state - store as strings for better input control
   const [inputHours, setInputHours] = useState('00');
   const [inputMinutes, setInputMinutes] = useState('25');
   const [inputSeconds, setInputSeconds] = useState('00');
   
   // Stopwatch state
-  const [stopwatchTime, setStopwatchTime] = useState(0); // in milliseconds
+  const [stopwatchTime, setStopwatchTime] = useState(0);
   
   const intervalRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -76,7 +76,6 @@ export const TimerView = () => {
   }, [isRunning, isPaused, mode, stopwatchTime]);
 
   const playSound = () => {
-    // Simple beep using Web Audio API
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
@@ -133,20 +132,41 @@ export const TimerView = () => {
   };
 
   const handleInputChange = (type: 'hours' | 'minutes' | 'seconds', value: string) => {
-    // Allow only numbers
-    const numValue = value.replace(/\D/g, '');
+    // Allow empty string or numbers only
+    if (value !== '' && !/^\d+$/.test(value)) return;
     
-    // Limit values
-    let finalValue = numValue;
+    // Set the raw value immediately
     if (type === 'hours') {
-      finalValue = Math.min(parseInt(numValue) || 0, 99).toString().padStart(2, '0');
-      setInputHours(finalValue);
+      setInputHours(value);
     } else if (type === 'minutes') {
-      finalValue = Math.min(parseInt(numValue) || 0, 59).toString().padStart(2, '0');
-      setInputMinutes(finalValue);
+      setInputMinutes(value);
     } else {
-      finalValue = Math.min(parseInt(numValue) || 0, 59).toString().padStart(2, '0');
-      setInputSeconds(finalValue);
+      setInputSeconds(value);
+    }
+  };
+
+  const handleInputBlur = (type: 'hours' | 'minutes' | 'seconds', value: string) => {
+    // Format on blur
+    let numValue = parseInt(value) || 0;
+    
+    if (type === 'hours') {
+      numValue = Math.min(numValue, 99);
+      setInputHours(numValue.toString().padStart(2, '0'));
+    } else {
+      numValue = Math.min(numValue, 59);
+      if (type === 'minutes') {
+        setInputMinutes(numValue.toString().padStart(2, '0'));
+      } else {
+        setInputSeconds(numValue.toString().padStart(2, '0'));
+      }
+    }
+  };
+
+  const handleInputFocus = (type: 'hours' | 'minutes' | 'seconds') => {
+    // Select all on focus for easy replacement
+    const input = document.activeElement as HTMLInputElement;
+    if (input) {
+      input.select();
     }
   };
 
@@ -217,10 +237,14 @@ export const TimerView = () => {
                 <div className="flex flex-col items-center">
                   <input
                     type="text"
+                    inputMode="numeric"
                     value={inputHours}
                     onChange={(e) => handleInputChange('hours', e.target.value)}
+                    onBlur={(e) => handleInputBlur('hours', e.target.value)}
+                    onFocus={() => handleInputFocus('hours')}
                     className="w-24 h-24 text-5xl text-center bg-white/40 backdrop-blur-md border-2 border-white/50 rounded-2xl focus:outline-none focus:border-blue-400 transition-all shadow-lg"
                     maxLength={2}
+                    placeholder="00"
                   />
                   <span className="text-sm text-gray-600 mt-2">Hours</span>
                 </div>
@@ -231,10 +255,14 @@ export const TimerView = () => {
                 <div className="flex flex-col items-center">
                   <input
                     type="text"
+                    inputMode="numeric"
                     value={inputMinutes}
                     onChange={(e) => handleInputChange('minutes', e.target.value)}
+                    onBlur={(e) => handleInputBlur('minutes', e.target.value)}
+                    onFocus={() => handleInputFocus('minutes')}
                     className="w-24 h-24 text-5xl text-center bg-white/40 backdrop-blur-md border-2 border-white/50 rounded-2xl focus:outline-none focus:border-blue-400 transition-all shadow-lg"
                     maxLength={2}
+                    placeholder="00"
                   />
                   <span className="text-sm text-gray-600 mt-2">Minutes</span>
                 </div>
@@ -245,10 +273,14 @@ export const TimerView = () => {
                 <div className="flex flex-col items-center">
                   <input
                     type="text"
+                    inputMode="numeric"
                     value={inputSeconds}
                     onChange={(e) => handleInputChange('seconds', e.target.value)}
+                    onBlur={(e) => handleInputBlur('seconds', e.target.value)}
+                    onFocus={() => handleInputFocus('seconds')}
                     className="w-24 h-24 text-5xl text-center bg-white/40 backdrop-blur-md border-2 border-white/50 rounded-2xl focus:outline-none focus:border-blue-400 transition-all shadow-lg"
                     maxLength={2}
+                    placeholder="00"
                   />
                   <span className="text-sm text-gray-600 mt-2">Seconds</span>
                 </div>

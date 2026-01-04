@@ -14,7 +14,6 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'general' | 'presets'>('general');
   
-  // Preset form state
   const [newPresetName, setNewPresetName] = useState('');
   const [newPresetTags, setNewPresetTags] = useState('');
   const [newPresetPriority, setNewPresetPriority] = useState<0 | 1 | 2>(0);
@@ -57,7 +56,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm"
           onClick={onClose}
         >
           <motion.div
@@ -65,7 +64,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white/90 backdrop-blur-xl rounded-3xl p-8 max-w-2xl w-full mx-4 border border-white/50 max-h-[80vh] overflow-y-auto"
+            className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 max-w-2xl w-full mx-4 border-2 border-white/50 shadow-2xl max-h-[80vh] overflow-y-auto custom-scrollbar"
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-3xl font-light text-gray-800">Settings</h2>
@@ -83,8 +82,8 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 onClick={() => setActiveTab('general')}
                 className={`px-6 py-2 rounded-xl transition-all ${
                   activeTab === 'general'
-                    ? 'bg-blue-500 text-white shadow-lg'
-                    : 'bg-white/50 text-gray-700 hover:bg-white/70'
+                    ? 'bg-white/50 shadow-lg backdrop-blur-md border border-white/50'
+                    : 'bg-white/30 hover:bg-white/40'
                 }`}
               >
                 General
@@ -93,8 +92,8 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 onClick={() => setActiveTab('presets')}
                 className={`px-6 py-2 rounded-xl transition-all ${
                   activeTab === 'presets'
-                    ? 'bg-blue-500 text-white shadow-lg'
-                    : 'bg-white/50 text-gray-700 hover:bg-white/70'
+                    ? 'bg-white/50 shadow-lg backdrop-blur-md border border-white/50'
+                    : 'bg-white/30 hover:bg-white/40'
                 }`}
               >
                 Calendar Presets
@@ -104,7 +103,6 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
             {/* General Settings */}
             {activeTab === 'general' && (
               <div className="space-y-6">
-                {/* Theme Selector */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Theme
@@ -122,7 +120,6 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   </select>
                 </div>
 
-                {/* Time Mode */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Time Tracking Mode
@@ -137,7 +134,6 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                   </select>
                 </div>
 
-                {/* Available Time */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Available Time ({settings.time_mode})
@@ -163,8 +159,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
             {/* Calendar Presets */}
             {activeTab === 'presets' && (
               <div className="space-y-6">
-                {/* Add Preset Form */}
-                <div className="bg-blue-50/50 rounded-2xl p-4 space-y-3">
+                <div className="bg-white/40 backdrop-blur-md rounded-2xl p-4 border border-white/30 space-y-3">
                   <h3 className="font-medium text-gray-800">Add New Preset</h3>
                   
                   <input
@@ -198,13 +193,12 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
                   <button
                     onClick={handleAddPreset}
-                    className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors"
+                    className="w-full px-4 py-2 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 text-gray-800 rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
                   >
                     Add Preset
                   </button>
                 </div>
 
-                {/* Presets List */}
                 <div className="space-y-2">
                   <h3 className="font-medium text-gray-800 mb-3">Your Presets</h3>
                   
@@ -247,7 +241,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="w-full mt-6 px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-xl transition-colors"
+              className="w-full mt-6 px-6 py-3 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 text-gray-800 rounded-xl transition-all shadow-lg hover:shadow-xl"
             >
               Close
             </button>

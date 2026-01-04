@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ConfirmModal } from '../ConfirmModal';
 
 export const CalendarView = () => {
   const { tasks, addTask, updateTask, deleteTask, calendarPresets } = useStore();
@@ -8,6 +9,10 @@ export const CalendarView = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'view' | 'add'>('view');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -30,7 +35,6 @@ export const CalendarView = () => {
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     
-    // Check if there are existing tasks on this date
     const tasksOnDate = tasks.filter(
       (t) => t.due_date && new Date(t.due_date).toDateString() === date.toDateString()
     );
@@ -77,10 +81,35 @@ export const CalendarView = () => {
     setSelectedDate(null);
   };
 
-  const handleDeleteTask = (taskId: number) => {
-    if (confirm('Delete this task?')) {
-      deleteTask(taskId);
+  const handleDeleteClick = (taskId: number) => {
+    setTaskToDelete(taskId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (taskToDelete) {
+      deleteTask(taskToDelete);
+      setTaskToDelete(null);
     }
+    setShowDeleteConfirm(false);
+  };
+
+  const handleEditClick = (taskId: number, currentContent: string) => {
+    setEditingTaskId(taskId);
+    setEditContent(currentContent);
+  };
+
+  const handleSaveEdit = (taskId: number) => {
+    if (editContent.trim()) {
+      updateTask(taskId, { content: editContent });
+    }
+    setEditingTaskId(null);
+    setEditContent('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTaskId(null);
+    setEditContent('');
   };
 
   const days = getDaysInMonth(currentMonth);
@@ -229,6 +258,8 @@ export const CalendarView = () => {
                   <div className="space-y-3">
                     {getTasksForSelectedDate().map((task) => {
                       const badge = getPriorityBadge(task.priority);
+                      const isEditing = editingTaskId === task.id;
+                      
                       return (
                         <div
                           key={task.id}
@@ -242,26 +273,77 @@ export const CalendarView = () => {
                                 </span>
                                 <span className="text-xs text-gray-600">{getStatusText(task.status)}</span>
                               </div>
-                              <p className="text-gray-800 leading-relaxed">{task.content}</p>
-                              {task.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {task.tags.map((tag) => (
-                                    <span
-                                      key={tag}
-                                      className="px-2 py-1 text-xs rounded-full bg-blue-500 text-white"
+                              
+                              {isEditing ? (
+                                <div className="space-y-2">
+                                  <textarea
+                                    autoFocus
+                                    value={editContent}
+                                    onChange={(e) => setEditContent(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSaveEdit(task.id);
+                                      }
+                                      if (e.key === 'Escape') {
+                                        handleCancelEdit();
+                                      }
+                                    }}
+                                    className="w-full bg-white/70 rounded-lg p-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                                    rows={3}
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => handleSaveEdit(task.id)}
+                                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors"
                                     >
-                                      {tag}
-                                    </span>
-                                  ))}
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={handleCancelEdit}
+                                      className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
                                 </div>
+                              ) : (
+                                <>
+                                  <p className="text-gray-800 leading-relaxed">{task.content}</p>
+                                  {task.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                      {task.tags.map((tag) => (
+                                        <span
+                                          key={tag}
+                                          className="px-2 py-1 text-xs rounded-full bg-blue-500 text-white"
+                                        >
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </div>
-                            <button
-                              onClick={() => handleDeleteTask(task.id)}
-                              className="text-red-500 hover:text-red-600 text-sm"
-                            >
-                              ✕
-                            </button>
+                            
+                            {!isEditing && (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleEditClick(task.id, task.content)}
+                                  className="text-blue-500 hover:text-blue-600 text-sm"
+                                  title="Edit task"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClick(task.id)}
+                                  className="text-red-500 hover:text-red-600 text-sm"
+                                  title="Delete task"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -341,6 +423,21 @@ export const CalendarView = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete Task?"
+        message="Are you sure you want to delete this task? This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setTaskToDelete(null);
+        }}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmColor="bg-red-500 hover:bg-red-600"
+      />
     </div>
   );
 };
