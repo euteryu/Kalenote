@@ -154,26 +154,26 @@ export const KanbanBoard = () => {
               }
             }}
             placeholder="What needs to be done? (Shift+Enter for new line, Enter to add)"
-            className="flex-1 bg-white/50 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+            className="flex-1 min-w-0 bg-white/50 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
             rows={2}
           />
           <input
             type="number"
             value={newTaskTime}
             onChange={(e) => setNewTaskTime(e.target.value)}
-            placeholder="Time (min)"
-            className="w-24 bg-white/50 rounded-xl px-3 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="Time (minutes)"
+            className="w-32 flex-shrink-0 bg-white/50 rounded-xl px-3 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <input
             type="text"
             value={newTaskTags}
             onChange={(e) => setNewTaskTags(e.target.value)}
             placeholder="Tags (comma-separated)"
-            className="w-48 bg-white/50 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-48 flex-shrink-0 bg-white/50 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <button
             type="submit"
-            className="px-6 py-3 bg-white/40 hover:bg-white/60 backdrop-blur-md text-gray-700 border border-white/50 rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
+            className="px-6 py-3 flex-shrink-0 bg-white/40 hover:bg-white/60 backdrop-blur-md text-gray-700 border border-white/50 rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
           >
             Add
           </button>

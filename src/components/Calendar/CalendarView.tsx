@@ -13,6 +13,10 @@ export const CalendarView = () => {
   const [editContent, setEditContent] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+  
+  // Custom task input modal state
+  const [showCustomTaskModal, setShowCustomTaskModal] = useState(false);
+  const [customTaskName, setCustomTaskName] = useState('');
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -63,20 +67,23 @@ export const CalendarView = () => {
     setSelectedDate(null);
   };
 
-  const handleCustomTask = () => {
-    if (!selectedDate) return;
-    
-    const taskName = prompt('Enter task name:');
-    if (!taskName) return;
+  const handleCustomTaskClick = () => {
+    setShowCustomTaskModal(true);
+  };
+
+  const handleCustomTaskSubmit = () => {
+    if (!selectedDate || !customTaskName.trim()) return;
 
     addTask({
-      content: taskName,
+      content: customTaskName,
       status: 'todo',
       priority: 0,
       tags: [],
       due_date: selectedDate.toISOString(),
     });
 
+    setCustomTaskName('');
+    setShowCustomTaskModal(false);
     setShowModal(false);
     setSelectedDate(null);
   };
@@ -396,7 +403,7 @@ export const CalendarView = () => {
                   )}
                   
                   <button
-                    onClick={handleCustomTask}
+                    onClick={handleCustomTaskClick}
                     className="w-full text-left px-4 py-3 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 text-gray-800 rounded-xl transition-all"
                   >
                     ✏️ Custom Task
@@ -419,6 +426,70 @@ export const CalendarView = () => {
               >
                 Close
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Task Input Modal */}
+      <AnimatePresence>
+        {showCustomTaskModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+            onClick={() => {
+              setShowCustomTaskModal(false);
+              setCustomTaskName('');
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full mx-4 border-2 border-white/50 shadow-2xl"
+            >
+              <h3 className="text-2xl font-light mb-4 text-gray-800">Enter Task Name</h3>
+              
+              <input
+                autoFocus
+                type="text"
+                value={customTaskName}
+                onChange={(e) => setCustomTaskName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCustomTaskSubmit();
+                  }
+                  if (e.key === 'Escape') {
+                    setShowCustomTaskModal(false);
+                    setCustomTaskName('');
+                  }
+                }}
+                placeholder="Task name..."
+                className="w-full bg-white/70 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 mb-6"
+              />
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowCustomTaskModal(false);
+                    setCustomTaskName('');
+                  }}
+                  className="flex-1 px-4 py-2 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 text-gray-800 rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCustomTaskSubmit}
+                  disabled={!customTaskName.trim()}
+                  className="flex-1 px-4 py-2 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 text-gray-800 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  Add Task
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
