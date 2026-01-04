@@ -55,7 +55,7 @@ function App() {
       {/* Header */}
       <header className="relative z-10 bg-white/20 backdrop-blur-sm border-b border-white/30">
         <div className="flex items-center justify-between px-6 py-4">
-          <h1 className="text-3xl font-light text-gray-800">Kalenote</h1>
+          <h1 className="text-3xl font-light text-gray-800">Hi, Minseok</h1>
           
           {/* Navigation */}
           <nav className="flex gap-2">

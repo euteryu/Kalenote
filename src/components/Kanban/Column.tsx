@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableTaskCard } from './SortableTaskCard';
@@ -12,7 +12,12 @@ interface ColumnProps {
 }
 
 export const Column = memo(({ title, status, tasks, icon }: ColumnProps) => {
-  const { setNodeRef } = useDroppable({ id: status });
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+
+  // Sort tasks by priority: High (2) -> Medium (1) -> Normal (0)
+  const sortedTasks = useMemo(() => {
+    return [...tasks].sort((a, b) => b.priority - a.priority);
+  }, [tasks]);
 
   return (
     <div className="flex flex-col h-full">
@@ -28,14 +33,18 @@ export const Column = memo(({ title, status, tasks, icon }: ColumnProps) => {
       {/* Drop zone */}
       <div
         ref={setNodeRef}
-        className="flex-1 bg-white/20 backdrop-blur-sm rounded-3xl p-4 border border-white/30 overflow-y-auto"
+        className={`flex-1 bg-white/20 backdrop-blur-sm rounded-3xl p-4 border-2 overflow-y-auto transition-all duration-200 ${
+          isOver 
+            ? 'border-blue-400 bg-blue-50/30 shadow-lg shadow-blue-400/20' 
+            : 'border-white/30'
+        }`}
         style={{
           minHeight: '400px',
         }}
       >
-        <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={sortedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-4">
-            {tasks.map((task) => (
+            {sortedTasks.map((task) => (
               <SortableTaskCard key={task.id} task={task} />
             ))}
           </div>
@@ -43,7 +52,7 @@ export const Column = memo(({ title, status, tasks, icon }: ColumnProps) => {
 
         {tasks.length === 0 && (
           <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
-            Drop tasks here
+            {isOver ? '✓ Drop here' : 'Drop tasks here'}
           </div>
         )}
       </div>

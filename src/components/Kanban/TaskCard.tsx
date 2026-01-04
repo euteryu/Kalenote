@@ -7,9 +7,10 @@ import type { Task, Priority } from '../../types';
 
 interface TaskCardProps {
   task: Task;
+  dragHandleProps?: any;
 }
 
-export const TaskCard = memo(({ task }: TaskCardProps) => {
+export const TaskCard = memo(({ task, dragHandleProps }: TaskCardProps) => {
   const { updateTask, deleteTask, getOrCreateTag, settings } = useStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(task.content);
@@ -50,7 +51,7 @@ export const TaskCard = memo(({ task }: TaskCardProps) => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className={`group relative bg-white/40 backdrop-blur-md rounded-2xl p-4 border-2 transition-all duration-300 cursor-pointer ${
+        className={`group relative bg-white/40 backdrop-blur-md rounded-2xl p-4 border-2 transition-all duration-300 ${
           task.status === 'doing'
             ? 'border-blue-400'
             : task.status === 'done'
@@ -65,16 +66,37 @@ export const TaskCard = memo(({ task }: TaskCardProps) => {
         onMouseEnter={(e) => {
           if (task.status !== 'done') {
             (e.currentTarget as HTMLElement).style.boxShadow = `0 0 10px ${priorityHoverColor}, 0 0 20px ${priorityHoverColor}, 0 0 30px ${priorityHoverColor}`;
+            (e.currentTarget as HTMLElement).style.borderColor = priorityHoverColor.replace('0.6', '0.8');
           }
         }}
         onMouseLeave={(e) => {
           if (task.status === 'doing') {
             (e.currentTarget as HTMLElement).style.boxShadow = '0 0 15px rgba(59, 130, 246, 0.3)';
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgb(96, 165, 250)';
           } else {
             (e.currentTarget as HTMLElement).style.boxShadow = '';
+            (e.currentTarget as HTMLElement).style.borderColor = '';
           }
         }}
       >
+        {/* Drag Handle */}
+        {dragHandleProps && (
+          <div
+            {...dragHandleProps}
+            className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-40 hover:!opacity-70 transition-opacity"
+            title="Drag to move"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="text-gray-600">
+              <circle cx="4" cy="3" r="1.5" />
+              <circle cx="4" cy="8" r="1.5" />
+              <circle cx="4" cy="13" r="1.5" />
+              <circle cx="12" cy="3" r="1.5" />
+              <circle cx="12" cy="8" r="1.5" />
+              <circle cx="12" cy="13" r="1.5" />
+            </svg>
+          </div>
+        )}
+
         {/* Priority Badge */}
         <button
           onClick={(e) => {
@@ -88,69 +110,74 @@ export const TaskCard = memo(({ task }: TaskCardProps) => {
         </button>
 
         {/* Content */}
-        {isEditing ? (
-          <textarea
-            autoFocus
-            value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
-            onBlur={handleSave}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSave();
-              }
-            }}
-            className="w-full bg-white/50 rounded-lg p-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-            rows={3}
-          />
-        ) : (
-          <div
-            onDoubleClick={handleDoubleClick}
-            className="text-gray-800 cursor-text leading-relaxed"
-          >
-            {task.content.split('\n').map((line, idx) => {
-              const trimmed = line.trim();
-              // Check if line starts with bullet point
-              const isBullet = trimmed.startsWith('-') || trimmed.startsWith('•');
-              const bulletContent = isBullet ? trimmed.substring(1).trim() : trimmed;
+        <div className="pl-6">
+          {isEditing ? (
+            <textarea
+              autoFocus
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSave();
+                }
+                if (e.key === 'Escape') {
+                  setIsEditing(false);
+                  setEditContent(task.content);
+                }
+              }}
+              className="w-full bg-white/50 rounded-lg p-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+              rows={3}
+            />
+          ) : (
+            <div
+              onDoubleClick={handleDoubleClick}
+              className="text-gray-800 cursor-text leading-relaxed"
+            >
+              {task.content.split('\n').map((line, idx) => {
+                const trimmed = line.trim();
+                const isBullet = trimmed.startsWith('-') || trimmed.startsWith('•');
+                const bulletContent = isBullet ? trimmed.substring(1).trim() : trimmed;
 
-              return (
-                <div key={idx} className={isBullet ? 'flex items-start gap-2 ml-2' : ''}>
-                  {isBullet && <span className="text-blue-500 mt-1">•</span>}
-                  <span className={isBullet ? 'flex-1' : ''}>{bulletContent || '\u00A0'}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                return (
+                  <div key={idx} className={isBullet ? 'flex items-start gap-2 ml-2' : ''}>
+                    {isBullet && <span className="text-blue-500 mt-1">•</span>}
+                    <span className={isBullet ? 'flex-1' : ''}>{bulletContent || '\u00A0'}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-        {/* Tags */}
-        {task.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {task.tags.map((tag) => {
-              const color = getOrCreateTag(tag);
-              return (
-                <span
-                  key={tag}
-                  className="px-2 py-1 text-xs rounded-full text-white"
-                  style={{ backgroundColor: color }}
-                >
-                  {tag}
-                </span>
-              );
-            })}
-          </div>
-        )}
+          {/* Tags */}
+          {task.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {task.tags.map((tag) => {
+                const color = getOrCreateTag(tag);
+                return (
+                  <span
+                    key={tag}
+                    className="px-2 py-1 text-xs rounded-full text-white"
+                    style={{ backgroundColor: color }}
+                  >
+                    {tag}
+                  </span>
+                );
+              })}
+            </div>
+          )}
 
-        {/* Time duration */}
-        {task.time_duration && (
-          <div className="mt-2 text-sm text-gray-600 flex items-center gap-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {Math.floor(task.time_duration / 60)}h {task.time_duration % 60}m
-          </div>
-        )}
+          {/* Time duration */}
+          {task.time_duration && (
+            <div className="mt-2 text-sm text-gray-600 flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {Math.floor(task.time_duration / 60)}h {task.time_duration % 60}m
+            </div>
+          )}
+        </div>
 
         {/* Delete button (on hover) */}
         <button
@@ -177,7 +204,6 @@ export const TaskCard = memo(({ task }: TaskCardProps) => {
     </>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison function for memo
   return (
     prevProps.task.id === nextProps.task.id &&
     prevProps.task.content === nextProps.task.content &&

@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { DndContext, DragEndEvent, DragOverlay, closestCorners } from '@dnd-kit/core';
+import { 
+  DndContext, 
+  DragEndEvent, 
+  DragStartEvent,
+  DragCancelEvent,
+  DragOverlay, 
+  closestCorners,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import { useStore } from '../../store';
 import { Column } from './Column';
 import { TaskCard } from './TaskCard';
@@ -15,6 +25,15 @@ export const KanbanBoard = () => {
   const [showTimeWarning, setShowTimeWarning] = useState(false);
   const [pendingMove, setPendingMove] = useState<{ taskId: number; newStatus: Status; exceeded: number } | null>(null);
 
+  // Configure sensors for better drag control
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before drag starts
+      },
+    })
+  );
+
   const columns: { status: Status; title: string; icon: string }[] = [
     { status: 'inbox', title: 'Inbox', icon: '📥' },
     { status: 'todo', title: 'To Do', icon: '📋' },
@@ -22,22 +41,54 @@ export const KanbanBoard = () => {
     { status: 'done', title: 'Done', icon: '✅' },
   ];
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as number);
+  };
+
+  const handleDragCancel = (event: DragCancelEvent) => {
+    // Drag was cancelled - just clear activeId
+    // Card stays in original position
+    setActiveId(null);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
-    // Clear activeId immediately to prevent visual glitches
+
+    // Always clear activeId first
     setActiveId(null);
 
+    // If no valid drop target, card stays in original position
     if (!over) {
-      // Card dropped outside - do nothing, stays in original position
       return;
     }
 
     const taskId = active.id as number;
-    const newStatus = over.id as Status;
     const task = tasks.find((t) => t.id === taskId);
 
-    if (!task) return;
+    if (!task) {
+      return;
+    }
+
+    // Determine the target column
+    // over.id can be either a column status or another task id
+    let newStatus: Status | null = null;
+
+    // Check if dropped on a column
+    const columnStatuses: Status[] = ['inbox', 'todo', 'doing', 'done'];
+    if (columnStatuses.includes(over.id as Status)) {
+      newStatus = over.id as Status;
+    } else {
+      // Dropped on another task - find that task's column
+      const overTask = tasks.find((t) => t.id === over.id);
+      if (overTask) {
+        newStatus = overTask.status;
+      }
+    }
+
+    // If we couldn't determine target column, abort
+    if (!newStatus) {
+      return;
+    }
 
     // No change if same status
     if (task.status === newStatus) {
@@ -131,8 +182,10 @@ export const KanbanBoard = () => {
 
       {/* Kanban columns */}
       <DndContext 
-        onDragEnd={handleDragEnd} 
-        onDragStart={(e) => setActiveId(e.active.id as number)} 
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
         collisionDetection={closestCorners}
       >
         <div className="grid grid-cols-4 gap-6 flex-1 overflow-hidden">
@@ -152,7 +205,7 @@ export const KanbanBoard = () => {
           }}
         >
           {activeId ? (
-            <div className="transform rotate-3 scale-105 opacity-90">
+            <div className="transform rotate-2 scale-105">
               <TaskCard task={tasks.find((t) => t.id === activeId)!} />
             </div>
           ) : null}

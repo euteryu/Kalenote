@@ -12,26 +12,24 @@ export const SortableTaskCard = ({ task }: SortableTaskCardProps) => {
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
   } = useSortable({ 
     id: task.id,
-    // Only activate drag on pointer move, not click
-    activationConstraint: {
-      distance: 8, // Must move 8px before dragging starts
-    },
   });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.3 : 1,
+    zIndex: isDragging ? 999 : 'auto',
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} />
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <TaskCard task={task} dragHandleProps={{ ref: setActivatorNodeRef, ...listeners }} />
     </div>
   );
 };
