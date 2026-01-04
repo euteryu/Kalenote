@@ -30,7 +30,7 @@ function App() {
           <div className="text-lg text-gray-600">{error}</div>
           <button 
             onClick={() => window.location.reload()} 
-            className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            className="mt-4 px-6 py-2 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 text-gray-800 rounded-lg shadow-lg transition-all"
           >
             Retry
           </button>
@@ -82,7 +82,7 @@ function App() {
           {/* Settings button */}
           <button 
             onClick={() => setIsSettingsOpen(true)}
-            className="w-10 h-10 bg-white/30 rounded-full hover:bg-white/40 transition-colors flex items-center justify-center"
+            className="w-10 h-10 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 rounded-full transition-all flex items-center justify-center shadow-lg hover:shadow-xl"
           >
             ⚙️
           </button>

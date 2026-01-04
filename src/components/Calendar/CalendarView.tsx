@@ -83,10 +83,10 @@ export const CalendarView = () => {
   };
 
   return (
-    <div className="p-6 h-full flex flex-col">
-      <div className="bg-white/30 backdrop-blur-md rounded-3xl p-6 border border-white/30 flex-1 flex flex-col">
+    <div className="p-6 h-full flex flex-col overflow-hidden">
+      <div className="bg-white/30 backdrop-blur-md rounded-3xl p-6 border border-white/30 flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-shrink-0">
           <button
             onClick={goToPreviousMonth}
             className="px-4 py-2 bg-white/50 rounded-xl hover:bg-white/70 transition-colors"
@@ -102,57 +102,62 @@ export const CalendarView = () => {
           </button>
         </div>
 
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-2 flex-1">
+        {/* Day labels */}
+        <div className="grid grid-cols-7 gap-2 mb-2 flex-shrink-0">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-            <div key={day} className="text-center text-sm font-medium text-gray-600 pb-2">
+            <div key={day} className="text-center text-sm font-medium text-gray-600">
               {day}
             </div>
           ))}
+        </div>
 
-          {days.map((day, index) => {
-            if (!day) return <div key={`empty-${index}`} />;
+        {/* Scrollable calendar grid */}
+        <div className="overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
+          <div className="grid grid-cols-7 gap-2">
+            {days.map((day, index) => {
+              if (!day) return <div key={`empty-${index}`} className="aspect-square" />;
 
-            const tasksOnDay = tasks.filter(
-              (t) => t.due_date && new Date(t.due_date).toDateString() === day.toDateString()
-            );
-            const today = isToday(day);
+              const tasksOnDay = tasks.filter(
+                (t) => t.due_date && new Date(t.due_date).toDateString() === day.toDateString()
+              );
+              const today = isToday(day);
 
-            return (
-              <button
-                key={day.toISOString()}
-                onClick={() => handleDateClick(day)}
-                className={`aspect-square bg-white/40 hover:bg-white/60 rounded-xl p-2 transition-all hover:scale-105 border ${
-                  today
-                    ? 'border-blue-500 shadow-lg shadow-blue-500/30'
-                    : 'border-white/30 hover:border-blue-400'
-                }`}
-              >
-                <div className={`font-medium ${today ? 'text-blue-600' : 'text-gray-800'}`}>
-                  {day.getDate()}
-                </div>
-                {tasksOnDay.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {tasksOnDay.slice(0, 3).map((task, idx) => (
-                      <div
-                        key={idx}
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          task.priority === 2
-                            ? 'bg-red-500'
-                            : task.priority === 1
-                            ? 'bg-yellow-500'
-                            : 'bg-blue-500'
-                        }`}
-                      />
-                    ))}
-                    {tasksOnDay.length > 3 && (
-                      <div className="text-xs text-gray-600">+{tasksOnDay.length - 3}</div>
-                    )}
+              return (
+                <button
+                  key={day.toISOString()}
+                  onClick={() => handleDateClick(day)}
+                  className={`aspect-square bg-white/40 hover:bg-white/60 rounded-xl p-2 transition-all hover:scale-105 border ${
+                    today
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/30'
+                      : 'border-white/30 hover:border-blue-400'
+                  }`}
+                >
+                  <div className={`font-medium ${today ? 'text-blue-600' : 'text-gray-800'}`}>
+                    {day.getDate()}
                   </div>
-                )}
-              </button>
-            );
-          })}
+                  {tasksOnDay.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1 justify-center">
+                      {tasksOnDay.slice(0, 3).map((task, idx) => (
+                        <div
+                          key={idx}
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            task.priority === 2
+                              ? 'bg-red-500'
+                              : task.priority === 1
+                              ? 'bg-yellow-500'
+                              : 'bg-blue-500'
+                          }`}
+                        />
+                      ))}
+                      {tasksOnDay.length > 3 && (
+                        <div className="text-xs text-gray-600">+{tasksOnDay.length - 3}</div>
+                      )}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -214,7 +219,7 @@ export const CalendarView = () => {
                 
                 <button
                   onClick={handleCustomTask}
-                  className="w-full text-left px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors"
+                  className="w-full text-left px-4 py-3 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 text-gray-800 rounded-xl transition-all"
                 >
                   ✏️ Custom Task
                 </button>
@@ -222,7 +227,7 @@ export const CalendarView = () => {
 
               <button
                 onClick={() => setShowPresetModal(false)}
-                className="w-full px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-xl transition-colors"
+                className="w-full px-4 py-2 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 text-gray-800 rounded-xl transition-all"
               >
                 Cancel
               </button>

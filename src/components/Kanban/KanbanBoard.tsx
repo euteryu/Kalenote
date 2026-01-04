@@ -173,7 +173,7 @@ export const KanbanBoard = () => {
           />
           <button
             type="submit"
-            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors font-medium"
+            className="px-6 py-3 bg-white/40 hover:bg-white/60 backdrop-blur-md text-gray-700 border border-white/50 rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
           >
             Add
           </button>

@@ -129,10 +129,10 @@ export const VoiceOverlay = () => {
       {/* Voice button */}
       <motion.button
         onClick={isListening ? stopListening : startListening}
-        className={`fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full shadow-lg transition-all duration-300 ${
+        className={`fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full shadow-xl backdrop-blur-md border transition-all duration-300 ${
           isListening
-            ? 'bg-red-500 hover:bg-red-600'
-            : 'bg-blue-500 hover:bg-blue-600'
+            ? 'bg-red-500/80 border-red-400/50 hover:bg-red-600/80'
+            : 'bg-white/40 border-white/50 hover:bg-white/60'
         }`}
         title="Voice Input (Ctrl+K)"
         whileHover={{ scale: 1.1 }}
@@ -150,7 +150,9 @@ export const VoiceOverlay = () => {
         } : {}}
       >
         <motion.svg
-          className="w-8 h-8 m-auto text-white"
+          className={`w-8 h-8 m-auto ${
+            isListening ? 'text-white' : 'text-gray-700'
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

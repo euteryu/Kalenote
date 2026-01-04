@@ -22,7 +22,7 @@ export const Column = memo(({ title, status, tasks, icon }: ColumnProps) => {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4 px-2">
+      <div className="flex items-center gap-3 mb-4 px-2 flex-shrink-0">
         <span className="text-2xl">{icon}</span>
         <h2 className="text-lg font-medium text-gray-700">{title}</h2>
         <span className="ml-auto text-sm text-gray-500 bg-white/50 px-2 py-1 rounded-full">
@@ -30,16 +30,19 @@ export const Column = memo(({ title, status, tasks, icon }: ColumnProps) => {
         </span>
       </div>
 
-      {/* Drop zone */}
+      {/* Drop zone - MUST be scrollable */}
       <div
         ref={setNodeRef}
-        className={`flex-1 bg-white/20 backdrop-blur-sm rounded-3xl p-4 border-2 overflow-y-auto transition-all duration-200 ${
+        className={`flex-1 bg-white/20 backdrop-blur-sm rounded-3xl p-4 border-2 transition-all duration-200 custom-scrollbar ${
           isOver 
             ? 'border-blue-400 bg-blue-50/30 shadow-lg shadow-blue-400/20' 
             : 'border-white/30'
         }`}
         style={{
           minHeight: '400px',
+          maxHeight: 'calc(100vh - 250px)',
+          overflowY: 'auto',
+          overflowX: 'hidden',
         }}
       >
         <SortableContext items={sortedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
