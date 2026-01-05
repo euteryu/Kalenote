@@ -146,7 +146,7 @@ export const CalendarView = () => {
     switch (priority) {
       case 2: return { text: 'HIGH', color: 'bg-red-500' };
       case 1: return { text: 'MED', color: 'bg-yellow-500' };
-      default: return { text: '●', color: 'bg-gray-400' };
+      default: return { text: '●', color: 'bg-white/40 backdrop-blur-sm border border-white/30' };
     }
   };
 

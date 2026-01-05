@@ -14,16 +14,46 @@ export const TaskCard = memo(({ task, dragHandleProps }: TaskCardProps) => {
   const { updateTask, deleteTask, getOrCreateTag, settings } = useStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(task.content);
+  const [editHours, setEditHours] = useState('');
+  const [editMinutes, setEditMinutes] = useState('');
+  const [editTags, setEditTags] = useState(task.tags.join(', '));
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleEditClick = () => {
     setIsEditing(true);
     setEditContent(task.content);
+    
+    // Convert total minutes to hours and minutes
+    if (task.time_duration) {
+      const hours = Math.floor(task.time_duration / 60);
+      const minutes = task.time_duration % 60;
+      setEditHours(hours > 0 ? hours.toString() : '');
+      setEditMinutes(minutes > 0 ? minutes.toString() : '');
+    } else {
+      setEditHours('');
+      setEditMinutes('');
+    }
+    
+    setEditTags(task.tags.join(', '));
   };
 
   const handleSave = () => {
     if (editContent.trim()) {
-      updateTask(task.id, { content: editContent });
+      // Convert hours and minutes to total minutes
+      const hours = parseInt(editHours) || 0;
+      const minutes = Math.min(parseInt(editMinutes) || 0, 59); // Cap at 59
+      const timeDuration = hours > 0 || minutes > 0 ? hours * 60 + minutes : undefined;
+      
+      const tags = editTags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      updateTask(task.id, { 
+        content: editContent,
+        time_duration: timeDuration,
+        tags
+      });
     }
     setIsEditing(false);
   };
@@ -31,6 +61,9 @@ export const TaskCard = memo(({ task, dragHandleProps }: TaskCardProps) => {
   const handleCancel = () => {
     setIsEditing(false);
     setEditContent(task.content);
+    setEditHours('');
+    setEditMinutes('');
+    setEditTags(task.tags.join(', '));
   };
 
   const cyclePriority = () => {
@@ -44,7 +77,7 @@ export const TaskCard = memo(({ task, dragHandleProps }: TaskCardProps) => {
     switch (task.priority) {
       case 2: return { text: 'HIGH', color: 'bg-red-500' };
       case 1: return { text: 'MED', color: 'bg-yellow-500' };
-      default: return { text: '●', color: 'bg-gray-400' };
+      default: return { text: '●', color: 'bg-white/40 backdrop-blur-sm border border-white/30' };
     }
   };
 
@@ -118,33 +151,84 @@ export const TaskCard = memo(({ task, dragHandleProps }: TaskCardProps) => {
         {/* Content */}
         <div className="pl-6">
           {isEditing ? (
-            <div className="space-y-2">
-              <textarea
-                autoFocus
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSave();
-                  }
-                  if (e.key === 'Escape') {
-                    handleCancel();
-                  }
-                }}
-                className="w-full bg-white/70 rounded-lg p-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                rows={3}
-              />
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-600 mb-1 block">Content</label>
+                <textarea
+                  autoFocus
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSave();
+                    }
+                    if (e.key === 'Escape') {
+                      handleCancel();
+                    }
+                  }}
+                  className="w-full bg-white/70 rounded-lg p-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                  rows={3}
+                  placeholder="Task content..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <label className="text-xs text-gray-600 block">Time</label>
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        value={editHours}
+                        onChange={(e) => setEditHours(e.target.value)}
+                        className="w-full bg-white/70 rounded-lg p-2 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        placeholder="0"
+                      />
+                      <span className="text-xs text-gray-500 mt-0.5 block">hours</span>
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={editMinutes}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (e.target.value === '' || (val >= 0 && val <= 59)) {
+                            setEditMinutes(e.target.value);
+                          }
+                        }}
+                        className="w-full bg-white/70 rounded-lg p-2 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        placeholder="0"
+                      />
+                      <span className="text-xs text-gray-500 mt-0.5 block">min</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600 mb-1 block">Tags</label>
+                  <input
+                    type="text"
+                    value={editTags}
+                    onChange={(e) => setEditTags(e.target.value)}
+                    className="w-full bg-white/70 rounded-lg p-2 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="tag1, tag2"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-2">
                 <button
                   onClick={handleSave}
-                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors"
+                  className="px-4 py-2 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 text-gray-800 text-sm rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
                 >
                   Save
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+                  className="px-4 py-2 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 text-gray-800 text-sm rounded-xl transition-all shadow-lg hover:shadow-xl"
                 >
                   Cancel
                 </button>

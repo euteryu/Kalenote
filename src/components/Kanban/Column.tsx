@@ -43,7 +43,7 @@ export const Column = memo(({ title, status, tasks, icon, onClearColumn }: Colum
       {/* Drop zone - MUST be scrollable */}
       <div
         ref={setNodeRef}
-        className={`flex-1 bg-white/20 backdrop-blur-sm rounded-3xl p-4 border-2 transition-all duration-200 custom-scrollbar ${
+        className={`flex-1 bg-white/20 backdrop-blur-sm rounded-3xl p-4 pb-10 border-2 transition-all duration-200 custom-scrollbar ${
           isOver 
             ? 'border-blue-400 bg-blue-50/30 shadow-lg shadow-blue-400/20' 
             : 'border-white/30'

@@ -20,7 +20,8 @@ export const KanbanBoard = () => {
   const { tasks, updateTask, addTask, deleteTask, settings } = useStore();
   const [activeId, setActiveId] = useState<number | null>(null);
   const [newTaskContent, setNewTaskContent] = useState('');
-  const [newTaskTime, setNewTaskTime] = useState('');
+  const [newTaskHours, setNewTaskHours] = useState('');
+  const [newTaskMinutes, setNewTaskMinutes] = useState('');
   const [newTaskTags, setNewTaskTags] = useState('');
   const [showTimeWarning, setShowTimeWarning] = useState(false);
   const [pendingMove, setPendingMove] = useState<{ taskId: number; newStatus: Status; exceeded: number } | null>(null);
@@ -111,7 +112,10 @@ export const KanbanBoard = () => {
     e.preventDefault();
     if (!newTaskContent.trim()) return;
 
-    const timeDuration = newTaskTime ? parseInt(newTaskTime) : undefined;
+    const hours = parseInt(newTaskHours) || 0;
+    const minutes = Math.min(parseInt(newTaskMinutes) || 0, 59);
+    const timeDuration = hours > 0 || minutes > 0 ? hours * 60 + minutes : undefined;
+    
     const tags = newTaskTags
       .split(',')
       .map((t) => t.trim())
@@ -126,7 +130,8 @@ export const KanbanBoard = () => {
     });
 
     setNewTaskContent('');
-    setNewTaskTime('');
+    setNewTaskHours('');
+    setNewTaskMinutes('');
     setNewTaskTags('');
   };
 
@@ -148,7 +153,7 @@ export const KanbanBoard = () => {
   };
 
   return (
-    <div className="flex flex-col h-full p-6 gap-4">
+    <div className="flex flex-col h-full p-4 gap-3">
       {/* Add task form */}
       <form onSubmit={handleAddTask} className="bg-white/30 backdrop-blur-md rounded-2xl p-4 border border-white/30">
         <div className="flex gap-3">
@@ -165,13 +170,30 @@ export const KanbanBoard = () => {
             className="flex-1 min-w-0 bg-white/50 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
             rows={2}
           />
-          <input
-            type="number"
-            value={newTaskTime}
-            onChange={(e) => setNewTaskTime(e.target.value)}
-            placeholder="Time (minutes)"
-            className="w-32 flex-shrink-0 bg-white/50 rounded-xl px-3 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
+          <div className="flex gap-2 flex-shrink-0">
+            <input
+              type="number"
+              min="0"
+              value={newTaskHours}
+              onChange={(e) => setNewTaskHours(e.target.value)}
+              placeholder="Hours"
+              className="w-20 bg-white/50 rounded-xl px-3 py-3 text-gray-800 placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <input
+              type="number"
+              min="0"
+              max="59"
+              value={newTaskMinutes}
+              onChange={(e) => {
+                const val = parseInt(e.target.value);
+                if (e.target.value === '' || (val >= 0 && val <= 59)) {
+                  setNewTaskMinutes(e.target.value);
+                }
+              }}
+              placeholder="Minutes"
+              className="w-24 bg-white/50 rounded-xl px-3 py-3 text-gray-800 placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
           <input
             type="text"
             value={newTaskTags}
