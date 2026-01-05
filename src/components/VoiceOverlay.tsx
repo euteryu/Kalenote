@@ -45,9 +45,9 @@ export const VoiceOverlay = () => {
         clearTimeout(silenceTimerRef.current);
       }
 
-      // Auto-submit after 3s of silence
+      // Auto-submit after 3s of silence (only if still listening)
       silenceTimerRef.current = setTimeout(() => {
-        if (finalTranscript.trim()) {
+        if (finalTranscript.trim() && isListening) {
           submitVoiceNote(finalTranscript.trim());
         }
       }, 3000);
@@ -88,10 +88,16 @@ export const VoiceOverlay = () => {
     if (recognitionRef.current && isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
-      setVoiceActive(false);
+      
+      // Clear auto-submit timer to prevent double submission
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+      }
       
       if (transcript.trim()) {
         submitVoiceNote(transcript.trim());
+      } else {
+        setVoiceActive(false);
       }
     }
   };
@@ -102,6 +108,11 @@ export const VoiceOverlay = () => {
       setIsListening(false);
       setVoiceActive(false);
       setTranscript('');
+      
+      // Clear auto-submit timer
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+      }
     }
   };
 
