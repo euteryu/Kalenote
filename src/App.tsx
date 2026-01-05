@@ -13,7 +13,7 @@ function App() {
   const { currentView, setCurrentView, initData, isLoading } = useStore();
   const [error, setError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1); // Default 100%
+  const [fontSize, setFontSize] = useState(18); // Base font size in px
 
   useEffect(() => {
     initData().catch((err) => {
@@ -22,19 +22,19 @@ function App() {
     });
   }, [initData]);
 
-  // Zoom functionality with Ctrl+/Ctrl-
+  // Dynamic font size adjustment with Ctrl+/Ctrl-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey)) {
         if (e.key === '=' || e.key === '+') {
           e.preventDefault();
-          setZoomLevel(prev => Math.min(prev + 0.1, 1.5)); // Max 150%
+          setFontSize(prev => Math.min(prev + 2, 28)); // Max 28px (+10px from default 18)
         } else if (e.key === '-' || e.key === '_') {
           e.preventDefault();
-          setZoomLevel(prev => Math.max(prev - 0.1, 0.7)); // Min 70%
+          setFontSize(prev => Math.max(prev - 2, 12)); // Min 12px (-6px from default 18)
         } else if (e.key === '0') {
           e.preventDefault();
-          setZoomLevel(1); // Reset to 100%
+          setFontSize(18); // Reset to default
         }
       }
     };
@@ -42,6 +42,11 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Apply font size to document
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${fontSize}px`;
+  }, [fontSize]);
 
   if (error) {
     return (
@@ -74,61 +79,51 @@ function App() {
     <div className="h-screen w-screen overflow-hidden relative">
       <Background />
       
-      <div
-        style={{
-          transform: `scale(${zoomLevel})`,
-          transformOrigin: 'top center',
-          transition: 'transform 0.2s ease-out',
-          height: `${100 / zoomLevel}%`,
-          width: '100%',
-        }}
-      >
-        {/* Header */}
-        <header className="relative z-10 bg-white/20 backdrop-blur-sm border-b border-white/30">
-          <div className="flex items-center justify-between px-6 py-2">
-            <h1 className="text-3xl font-light text-gray-800">Hi, Minseok</h1>
-            
-            {/* Navigation */}
-            <nav className="flex gap-2">
-              {[
-                { id: 'kanban', label: 'Kanban', icon: '📋' },
-                { id: 'calendar', label: 'Calendar', icon: '📅' },
-                { id: 'timer', label: 'Timer', icon: '⏱️' },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentView(item.id as any)}
-                  className={`px-6 py-2 rounded-xl transition-all ${
-                    currentView === item.id
-                      ? 'bg-white/50 shadow-lg backdrop-blur-md border border-white/50'
-                      : 'bg-white/20 hover:bg-white/30'
-                  }`}
-                >
-                  <span className="mr-2">{item.icon}</span>
-                  {item.label}
-                </button>
-              ))}
-            </nav>
+      {/* Header */}
+      <header className="relative z-10 bg-white/20 backdrop-blur-sm border-b border-white/30">
+        <div className="flex items-center justify-between px-6 py-2">
+          <h1 className="text-3xl font-light text-gray-800">Hi, Minseok</h1>
+          
+          {/* Navigation */}
+          <nav className="flex gap-2">
+            {[
+              { id: 'kanban', label: 'Kanban', icon: '📋' },
+              { id: 'calendar', label: 'Calendar', icon: '📅' },
+              { id: 'timer', label: 'Timer', icon: '⏱️' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setCurrentView(item.id as any)}
+                className={`px-6 py-2 rounded-xl transition-all ${
+                  currentView === item.id
+                    ? 'bg-white/50 shadow-lg backdrop-blur-md border border-white/50'
+                    : 'bg-white/20 hover:bg-white/30'
+                }`}
+              >
+                <span className="mr-2">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </nav>
 
-            {/* Settings button */}
-            <button 
-              onClick={() => setIsSettingsOpen(true)}
-              className="w-10 h-10 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 rounded-full transition-all flex items-center justify-center shadow-lg hover:shadow-xl"
-            >
-              ⚙️
-            </button>
-          </div>
-        </header>
+          {/* Settings button */}
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="w-10 h-10 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/50 rounded-full transition-all flex items-center justify-center shadow-lg hover:shadow-xl"
+          >
+            ⚙️
+          </button>
+        </div>
+      </header>
 
-        {/* Main content - wrapped in ErrorBoundary */}
-        <main className="relative z-10" style={{ height: 'calc(100vh - 57px)' }}>
-          <ErrorBoundary>
-            {currentView === 'kanban' && <KanbanBoard />}
-            {currentView === 'calendar' && <CalendarView />}
-            {currentView === 'timer' && <TimerView />}
-          </ErrorBoundary>
-        </main>
-      </div>
+      {/* Main content - wrapped in ErrorBoundary */}
+      <main className="relative z-10" style={{ height: 'calc(100vh - 57px)' }}>
+        <ErrorBoundary>
+          {currentView === 'kanban' && <KanbanBoard />}
+          {currentView === 'calendar' && <CalendarView />}
+          {currentView === 'timer' && <TimerView />}
+        </ErrorBoundary>
+      </main>
 
       {/* Voice overlay - wrapped in ErrorBoundary */}
       <ErrorBoundary>
@@ -142,13 +137,6 @@ function App() {
 
       {/* Toast notifications */}
       <ToastContainer />
-
-      {/* Zoom indicator */}
-      {zoomLevel !== 1 && (
-        <div className="fixed bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm font-mono z-[100]">
-          {Math.round(zoomLevel * 100)}%
-        </div>
-      )}
     </div>
   );
 }

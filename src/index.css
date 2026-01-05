@@ -10,10 +10,10 @@ html, body, #root {
   position: fixed;
 }
 
-/* Increase all font sizes by 6px */
+/* Base font size - adjusted via zoom */
 @layer base {
   html {
-    font-size: 22px; /* Base was 16px, now 22px (+6px) */
+    font-size: 18px; /* Base 16px + 2px (more conservative than +6) */
   }
 }
 
