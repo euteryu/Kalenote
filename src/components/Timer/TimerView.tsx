@@ -6,10 +6,8 @@ export const TimerView = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   
-  // Timer state (HH:MM:SS)
-  const [hours, setHours] = useState(0);
-  const [minutes, setMinutes] = useState(25);
-  const [seconds, setSeconds] = useState(0);
+  // Timer state - use total seconds for accurate countdown
+  const [totalSeconds, setTotalSeconds] = useState(1500); // 25 minutes default
   
   // Input state - store as strings for better input control
   const [inputHours, setInputHours] = useState('00');
@@ -22,36 +20,25 @@ export const TimerView = () => {
   const intervalRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
 
+  // Derive hours, minutes, seconds from totalSeconds
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
   // Timer countdown
   useEffect(() => {
     if (!isRunning || isPaused || mode !== 'timer') return;
 
     intervalRef.current = window.setInterval(() => {
-      setSeconds((s) => {
-        if (s > 0) return s - 1;
-        
-        setMinutes((m) => {
-          if (m > 0) {
-            setSeconds(59);
-            return m - 1;
-          }
-          
-          setHours((h) => {
-            if (h > 0) {
-              setMinutes(59);
-              setSeconds(59);
-              return h - 1;
-            }
-            
-            // Timer finished
-            setIsRunning(false);
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            playSound();
-            return 0;
-          });
+      setTotalSeconds((prev) => {
+        if (prev <= 0) {
+          // Timer finished
+          setIsRunning(false);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          playSound();
           return 0;
-        });
-        return 0;
+        }
+        return prev - 1;
       });
     }, 1000);
 
@@ -99,11 +86,10 @@ export const TimerView = () => {
       const m = parseInt(inputMinutes) || 0;
       const s = parseInt(inputSeconds) || 0;
       
-      if (h === 0 && m === 0 && s === 0) return;
+      const total = h * 3600 + m * 60 + s;
+      if (total === 0) return;
       
-      setHours(h);
-      setMinutes(m);
-      setSeconds(s);
+      setTotalSeconds(total);
     }
     
     setIsRunning(true);
@@ -123,9 +109,10 @@ export const TimerView = () => {
     setIsPaused(false);
     
     if (mode === 'timer') {
-      setHours(parseInt(inputHours) || 0);
-      setMinutes(parseInt(inputMinutes) || 0);
-      setSeconds(parseInt(inputSeconds) || 0);
+      const h = parseInt(inputHours) || 0;
+      const m = parseInt(inputMinutes) || 0;
+      const s = parseInt(inputSeconds) || 0;
+      setTotalSeconds(h * 3600 + m * 60 + s);
     } else {
       setStopwatchTime(0);
     }

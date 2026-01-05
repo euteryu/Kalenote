@@ -4,7 +4,7 @@ import { useStore } from '../store';
 import { useToast } from '../hooks/useToast';
 
 export const VoiceOverlay = () => {
-  const { isVoiceActive, setVoiceActive, addTask } = useStore();
+  const { isVoiceActive, setVoiceActive, addTask, currentView } = useStore();
   const { addToast } = useToast();
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -96,6 +96,15 @@ export const VoiceOverlay = () => {
     }
   };
 
+  const cancelVoice = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      setVoiceActive(false);
+      setTranscript('');
+    }
+  };
+
   const submitVoiceNote = (text: string) => {
     addTask({
       content: text,
@@ -108,11 +117,18 @@ export const VoiceOverlay = () => {
     setVoiceActive(false);
   };
 
-  // Listen for "Hey Kale" wake word (simplified - just button for now)
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl/Cmd + K to activate voice
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      // Escape to cancel voice mode
+      if (e.key === 'Escape' && isVoiceActive) {
+        e.preventDefault();
+        cancelVoice();
+        return;
+      }
+
+      // Ctrl/Cmd + K to activate voice (only in Kanban view)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k' && currentView === 'kanban') {
         e.preventDefault();
         if (!isVoiceActive) {
           startListening();
@@ -122,7 +138,12 @@ export const VoiceOverlay = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isVoiceActive]);
+  }, [isVoiceActive, currentView]);
+
+  // Only show voice button in Kanban view
+  if (currentView !== 'kanban') {
+    return null;
+  }
 
   return (
     <>
@@ -177,6 +198,7 @@ export const VoiceOverlay = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-40 flex items-center justify-center backdrop-blur-md bg-black/30"
+            onClick={cancelVoice}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -184,6 +206,7 @@ export const VoiceOverlay = () => {
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="bg-white/10 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border border-white/20 max-w-2xl w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
                 {/* Pulsing microphone */}
@@ -244,12 +267,21 @@ export const VoiceOverlay = () => {
                 </motion.h2>
                 
                 <motion.p
-                  className="text-white/70 mb-8"
+                  className="text-white/70 mb-2"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
                 >
                   Speak your thought. I'll add it when you're done.
+                </motion.p>
+
+                <motion.p
+                  className="text-white/50 text-sm mb-8"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  Press ESC to cancel
                 </motion.p>
 
                 {transcript && (
@@ -262,14 +294,24 @@ export const VoiceOverlay = () => {
                   </motion.div>
                 )}
 
-                <motion.button
-                  onClick={stopListening}
-                  className="px-8 py-3 bg-white/20 hover:bg-white/30 text-white rounded-full transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Stop & Add Note
-                </motion.button>
+                <div className="flex gap-3 justify-center">
+                  <motion.button
+                    onClick={cancelVoice}
+                    className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Cancel (ESC)
+                  </motion.button>
+                  <motion.button
+                    onClick={stopListening}
+                    className="px-8 py-3 bg-white/20 hover:bg-white/30 text-white rounded-full transition-colors font-medium"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Stop & Add Note
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
