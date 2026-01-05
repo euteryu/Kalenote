@@ -86,11 +86,14 @@ export const TaskCard = memo(({ task, dragHandleProps }: TaskCardProps) => {
   return (
     <>
       <motion.div
+        {...(dragHandleProps && !isEditing ? dragHandleProps : {})}
         layout
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         className={`group relative bg-white/40 backdrop-blur-md rounded-2xl p-4 border-2 transition-all duration-300 ${
+          !isEditing ? 'cursor-grab active:cursor-grabbing' : ''
+        } ${
           task.status === 'doing'
             ? 'border-blue-400'
             : task.status === 'done'
@@ -118,24 +121,6 @@ export const TaskCard = memo(({ task, dragHandleProps }: TaskCardProps) => {
           }
         }}
       >
-        {/* Drag Handle */}
-        {dragHandleProps && (
-          <div
-            {...dragHandleProps}
-            className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-40 hover:!opacity-70 transition-opacity"
-            title="Drag to move"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="text-gray-600">
-              <circle cx="4" cy="3" r="1.5" />
-              <circle cx="4" cy="8" r="1.5" />
-              <circle cx="4" cy="13" r="1.5" />
-              <circle cx="12" cy="3" r="1.5" />
-              <circle cx="12" cy="8" r="1.5" />
-              <circle cx="12" cy="13" r="1.5" />
-            </svg>
-          </div>
-        )}
-
         {/* Priority Badge */}
         <button
           onClick={(e) => {
@@ -149,7 +134,7 @@ export const TaskCard = memo(({ task, dragHandleProps }: TaskCardProps) => {
         </button>
 
         {/* Content */}
-        <div className="pl-6">
+        <div>
           {isEditing ? (
             <div className="space-y-3">
               <div>

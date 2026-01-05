@@ -3,7 +3,6 @@ import {
   DndContext, 
   DragEndEvent, 
   DragStartEvent,
-  DragCancelEvent,
   DragOverlay, 
   closestCorners,
   PointerSensor,
